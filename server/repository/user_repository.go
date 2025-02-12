@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"log"
 
-	"github.com/YehudaBriskman/chatingApp/server/models"
+	"chatingApp/models"
 )
 
 type UserRepository struct {

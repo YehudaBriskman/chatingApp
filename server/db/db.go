@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/YehudaBriskman/chatingApp/server/config"
+	"chatingApp/config"
 	_ "github.com/lib/pq"
 )
 

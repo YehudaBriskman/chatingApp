@@ -1,8 +1,8 @@
 package services
 
 import (
-	"github.com/YehudaBriskman/chatingApp/server/models"
-	"github.com/YehudaBriskman/chatingApp/server/repository"
+	"chatingApp/models"
+	"chatingApp/repository"
 )
 
 type UserService struct {

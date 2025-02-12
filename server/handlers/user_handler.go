@@ -3,7 +3,7 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/YehudaBriskman/chatingApp/server/services"
+	"chatingApp/services"
 	"github.com/gin-gonic/gin"
 )
 

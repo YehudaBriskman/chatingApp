@@ -2,11 +2,11 @@ package main
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/YehudaBriskman/chatingApp/server/db"
-	"github.com/YehudaBriskman/chatingApp/server/handlers"
-	"github.com/YehudaBriskman/chatingApp/server/repository"
-	"github.com/YehudaBriskman/chatingApp/server/routes"
-	"github.com/YehudaBriskman/chatingApp/server/services"
+	"chatingApp/db"
+	"chatingApp/handlers"
+	"chatingApp/repository"
+	"chatingApp/routes"
+	"chatingApp/services"
 )
 
 func main() {

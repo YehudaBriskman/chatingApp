@@ -1,7 +1,7 @@
 package routes
 
 import (
-	"github.com/YehudaBriskman/chatingApp/server/handlers"
+	"chatingApp/handlers"
 	"github.com/gin-gonic/gin"
 )
 
