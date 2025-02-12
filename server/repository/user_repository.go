@@ -18,7 +18,7 @@ func NewUserRepository(db *sql.DB) *UserRepository {
 func (repo *UserRepository) GetAllUsers() ([]models.User, error) {
 	rows, err := repo.DB.Query("SELECT id, name, email FROM users")
 	if err != nil {
-		log.Println("❌ שגיאה בשליפת משתמשים:", err)
+		log.Println("error in get users", err)
 		return nil, err
 	}
 	defer rows.Close()

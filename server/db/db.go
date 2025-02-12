@@ -6,11 +6,14 @@ import (
 	"log"
 
 	"chatingApp/config"
+	"chatingApp/db/migrations"
+
 	_ "github.com/lib/pq"
 )
 
 var DB *sql.DB
 
+// ConnectDB initializes the database connection and applies migrations
 func ConnectDB() {
 	config.LoadConfig()
 
@@ -23,13 +26,17 @@ func ConnectDB() {
 	var err error
 	DB, err = sql.Open("postgres", connStr)
 	if err != nil {
-		log.Fatal("❌ שגיאה בחיבור למסד הנתונים:", err)
+		log.Fatal("❌ Error: Failed to connect to the database:", err)
 	}
 
 	err = DB.Ping()
 	if err != nil {
-		log.Fatal("❌ מסד הנתונים אינו מגיב:", err)
+		log.Fatal("❌ Error: Database is not responding:", err)
 	}
 
-	fmt.Println("✅ חיבור למסד הנתונים הצליח!")
+	fmt.Println("✅ Success: Connected to the database.")
+
+	// Execute database migrations to ensure tables exist
+	migrations.CreateTables(DB)
+	fmt.Println("✅ Success: Database migrations applied.")
 }
