@@ -29,6 +29,17 @@ func CreateTables(db *sql.DB) {
 			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 		);
 		`,
+		`
+		CREATE TABLE IF NOT EXISTS system_logs (
+			id SERIAL PRIMARY KEY,
+			method TEXT NOT NULL,
+			endpoint TEXT NOT NULL,
+			user_id INT NULL,
+			status_code INT NOT NULL,
+			message TEXT NOT NULL,
+			timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+		);
+		`,
 	}
 
 	for _, query := range queries {

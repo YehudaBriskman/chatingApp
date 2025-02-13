@@ -8,6 +8,7 @@ import (
 	"chatingApp/routes"
 	"chatingApp/services"
 	"github.com/gin-gonic/gin"
+	"log"
 )
 
 func main() {
@@ -19,7 +20,10 @@ func main() {
 
 	router := gin.Default()
 	router.Use(middleware.ErrorHandlerMiddleware())
+	router.Use(middleware.SystemLogMiddleware()) // Middleware to log all requests
+
 	routes.SetupUserRoutes(router, userHandler)
 
+	log.Println("🚀 Server started on port 8080")
 	router.Run(":8080")
 }
