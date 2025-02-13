@@ -3,7 +3,6 @@ package handlers
 import (
 	"net/http"
 	"strings"
-
 	"chatingApp/services"
 	"github.com/gin-gonic/gin"
 )

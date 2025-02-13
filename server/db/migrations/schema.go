@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-
 	"golang.org/x/crypto/bcrypt"
 )
 

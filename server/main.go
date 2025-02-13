@@ -1,12 +1,13 @@
 package main
 
 import (
-	"github.com/gin-gonic/gin"
 	"chatingApp/db"
 	"chatingApp/handlers"
+	"chatingApp/middleware"
 	"chatingApp/repository"
 	"chatingApp/routes"
 	"chatingApp/services"
+	"github.com/gin-gonic/gin"
 )
 
 func main() {
@@ -17,6 +18,7 @@ func main() {
 	userHandler := handlers.NewUserHandler(userService)
 
 	router := gin.Default()
+	router.Use(middleware.ErrorHandlerMiddleware())
 	routes.SetupUserRoutes(router, userHandler)
 
 	router.Run(":8080")

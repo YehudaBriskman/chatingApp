@@ -4,9 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-
 	"chatingApp/config"
-
 	_ "github.com/lib/pq"
 )
 

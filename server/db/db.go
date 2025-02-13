@@ -4,10 +4,8 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-
 	"chatingApp/config"
 	"chatingApp/db/migrations"
-
 	_ "github.com/lib/pq"
 )
 

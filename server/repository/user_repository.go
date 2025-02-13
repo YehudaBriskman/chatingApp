@@ -5,7 +5,6 @@ import (
 	"errors"
 	"log"
 	"time"
-
 	"chatingApp/models"
 	"golang.org/x/crypto/bcrypt"
 )
