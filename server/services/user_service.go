@@ -4,12 +4,13 @@ import (
 	"chatingApp/models"
 	"chatingApp/repository"
 	"errors"
+	"os"
 	"golang.org/x/crypto/bcrypt"
 	"github.com/golang-jwt/jwt/v5"
 	"time"
 )
 
-const secretKey = "your-secret-key"
+var secretKey = os.Getenv("SECRET_KEY")
 
 // UserService provides business logic for user operations.
 type UserService struct {

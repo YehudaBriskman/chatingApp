@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strings"
 	"chatingApp/services"
+	"chatingApp/middleware"
 	"github.com/gin-gonic/gin"
 )
 
@@ -31,7 +32,7 @@ func (h *UserHandler) GetUsers(c *gin.Context) {
 		return
 	}
 
-	if claims["role"] != "admin" && claims["role"] != "super-admin" {
+	if !middleware.HasRequiredRole(claims["role"].(string), "admin") {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Access denied"})
 		return
 	}
@@ -74,12 +75,7 @@ func (h *UserHandler) AddUser(c *gin.Context) {
 			return
 		}
 
-		if userInput.Role == "admin" && claims["role"] != "admin" && claims["role"] != "super-admin" {
-			c.JSON(http.StatusForbidden, gin.H{"error": "Access denied"})
-			return
-		}
-
-		if userInput.Role == "super-admin" && claims["role"] != "super-admin" {
+		if !middleware.HasRequiredRole(claims["role"].(string), userInput.Role) {
 			c.JSON(http.StatusForbidden, gin.H{"error": "Access denied"})
 			return
 		}
