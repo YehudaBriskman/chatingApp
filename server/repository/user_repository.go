@@ -1,12 +1,12 @@
 package repository
 
 import (
+	"chatingApp/models"
 	"database/sql"
 	"errors"
+	"golang.org/x/crypto/bcrypt"
 	"log"
 	"time"
-	"chatingApp/models"
-	"golang.org/x/crypto/bcrypt"
 )
 
 // UserRepository is responsible for database operations related to users.
@@ -91,5 +91,23 @@ func (repo *UserRepository) Login(email, password string) (*models.User, error) 
 	}
 
 	log.Println("✅ User logged in successfully:", user.Name)
+	return &user, nil
+}
+
+func (repo *UserRepository) GetUserByEmail(email string) (*models.User, error) {
+	var user models.User
+
+	query := "SELECT id, name, email, role, created_at, updated_at FROM users WHERE email = $1"
+	row := repo.DB.QueryRow(query, email)
+
+	err := row.Scan(&user.ID, &user.Name, &user.Email, &user.Role, &user.CreatedAt, &user.UpdatedAt)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		log.Println("❌ Error: Failed to retrieve user by email", err)
+		return nil, err
+	}
+
 	return &user, nil
 }

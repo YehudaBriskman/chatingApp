@@ -1,9 +1,11 @@
 package middleware
 
 import (
+	"chatingApp/services"
+	"errors"
 	"net/http"
 	"strings"
-	"chatingApp/services"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -24,8 +26,10 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		c.Set("userID", claims["id"])
+		// שמירת הנתונים ב-Context לשימוש מאוחר יותר
+		c.Set("userID", extractUserID(claims))
 		c.Set("role", claims["role"])
+		c.Set("email", claims["email"])
 		c.Next()
 	}
 }
@@ -43,7 +47,7 @@ func HasRequiredRole(userRole, requiredRole string) bool {
 	requiredRank, requiredExists := RoleHierarchy[requiredRole]
 
 	if !userExists || !requiredExists {
-		return false 
+		return false
 	}
 
 	return userRank >= requiredRank
@@ -59,5 +63,67 @@ func AdminMiddleware(requiredRole string) gin.HandlerFunc {
 			return
 		}
 		c.Next()
+	}
+}
+
+// ExtractTokenData validates the token, checks the role, and returns user info
+func ExtractTokenData(c *gin.Context, requiredRole string) (int, string, string, error) {
+	token := c.GetHeader("Authorization")
+
+	if token == "" {
+		return 0, "", "", errors.New("missing authentication token")
+	}
+
+	claims, err := services.ValidateToken(strings.TrimPrefix(token, "Bearer "))
+	if err != nil {
+		return 0, "", "", errors.New("invalid or expired token")
+	}
+
+	role, ok := claims["role"].(string)
+	if !ok {
+		return 0, "", "", errors.New("invalid token data: missing role")
+	}
+
+	if requiredRole != "" && !HasRequiredRole(role, requiredRole) {
+		return 0, "", "", errors.New("access denied: insufficient role permissions")
+	}
+
+	userID := extractUserID(claims)
+	if userID == 0 {
+		return 0, "", "", errors.New("invalid token data: user ID missing or invalid")
+	}
+
+	email, _ := claims["email"].(string)
+
+	return userID, role, email, nil
+}
+
+// RequireTokenAndRole is a middleware that ensures token authentication and a specific role
+func RequireTokenAndRole(requiredRole string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		_, _, _, err := ExtractTokenData(c, requiredRole)
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+			c.Abort()
+			return
+		}
+		c.Next()
+	}
+}
+
+// extractUserID extracts user ID from JWT claims
+func extractUserID(claims map[string]interface{}) int {
+	userIDRaw, exists := claims["user_id"]
+	if !exists {
+		return 0
+	}
+
+	switch v := userIDRaw.(type) {
+	case float64:
+		return int(v)
+	case int:
+		return v
+	default:
+		return 0
 	}
 }

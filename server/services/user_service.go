@@ -5,9 +5,10 @@ import (
 	"chatingApp/repository"
 	"errors"
 	"os"
-	"golang.org/x/crypto/bcrypt"
-	"github.com/golang-jwt/jwt/v5"
+	"strconv"
 	"time"
+	"github.com/golang-jwt/jwt/v5"
+	"golang.org/x/crypto/bcrypt"
 )
 
 var secretKey = os.Getenv("SECRET_KEY")
@@ -25,6 +26,10 @@ func NewUserService(repo *repository.UserRepository) *UserService {
 // GetAllUsers retrieves all users from the repository.
 func (s *UserService) GetAllUsers() ([]models.User, error) {
 	return s.UserRepo.GetAllUsers()
+}
+
+func (s *UserService) GetUserByEmail(email string) (*models.User, error) {
+	return s.UserRepo.GetUserByEmail(email)
 }
 
 // AddUser hashes the password and adds a new user to the repository.
@@ -51,7 +56,7 @@ func (s *UserService) Login(email, password string) (string, error) {
 	}
 
 	// Generate JWT token
-	token, err := s.GenerateToken(user.Email, user.Role)
+	token, err := s.GenerateToken(user.Email, user.ID, user.Role)
 	if err != nil {
 		return "", errors.New("failed to generate authentication token")
 	}
@@ -60,11 +65,27 @@ func (s *UserService) Login(email, password string) (string, error) {
 }
 
 // GenerateToken generates a JWT token for user authentication
-func (s *UserService) GenerateToken(email, role string) (string, error) {
+func (s *UserService) GenerateToken(email string, id interface{}, role string) (string, error) {
+	var userID int
+
+	switch v := id.(type) {
+	case string:
+		parsedID, err := strconv.Atoi(v)
+		if err != nil {
+			return "", errors.New("invalid user ID format")
+		}
+		userID = parsedID
+	case int:
+		userID = v
+	default:
+		return "", errors.New("unsupported user ID type")
+	}
+
 	claims := jwt.MapClaims{
-		"email": email,
-		"role":  role,
-		"exp":   time.Now().Add(time.Hour * 24).Unix(), // Token expires in 24 hours
+		"email":   email,
+		"user_id": userID,
+		"role":    role,
+		"exp":     time.Now().Add(time.Hour * 24).Unix(),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -78,7 +99,12 @@ func (s *UserService) GenerateToken(email, role string) (string, error) {
 
 // ValidateToken verifies the JWT token and extracts claims
 func ValidateToken(tokenString string) (jwt.MapClaims, error) {
+	// Parse the JWT token
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		// Make sure the token is signed with HS256
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, errors.New("unexpected signing method")
+		}
 		return []byte(secretKey), nil
 	})
 
@@ -86,9 +112,26 @@ func ValidateToken(tokenString string) (jwt.MapClaims, error) {
 		return nil, errors.New("invalid token")
 	}
 
-	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		return claims, nil
+	// Extract claims and ensure the token is valid
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok || !token.Valid {
+		return nil, errors.New("invalid token")
 	}
 
-	return nil, errors.New("invalid token")
+	// Convert user_id to int if needed
+	if userID, exists := claims["user_id"]; exists {
+		switch v := userID.(type) {
+		case string:
+			parsedID, err := strconv.Atoi(v)
+			if err != nil {
+				return nil, errors.New("invalid user_id format")
+			}
+			claims["user_id"] = parsedID
+		case float64:
+			// JSON unmarshal converts numbers to float64, so we cast to int
+			claims["user_id"] = int(v)
+		}
+	}
+
+	return claims, nil
 }

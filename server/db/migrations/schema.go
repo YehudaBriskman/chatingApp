@@ -3,15 +3,14 @@ package migrations
 import (
 	"database/sql"
 	"fmt"
+	"golang.org/x/crypto/bcrypt"
 	"log"
 	"os"
-	"golang.org/x/crypto/bcrypt"
 )
 
 func CreateTables(db *sql.DB) {
 	queries := []string{
-		`
-		CREATE TABLE IF NOT EXISTS users (
+		`CREATE TABLE IF NOT EXISTS users (
 			id SERIAL PRIMARY KEY,
 			name TEXT NOT NULL,
 			email TEXT UNIQUE NOT NULL,
@@ -19,18 +18,33 @@ func CreateTables(db *sql.DB) {
 			role TEXT CHECK (role IN ('user', 'admin', 'super-admin')) NOT NULL,
 			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 			updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-		);
-		`,
-		`
-		CREATE TABLE IF NOT EXISTS messages (
+		);`,
+
+		`CREATE TABLE IF NOT EXISTS rooms (
+	        id SERIAL PRIMARY KEY,
+	        name TEXT NOT NULL,
+	        description TEXT,
+	        created_by INT REFERENCES users(id) ON DELETE CASCADE,
+	        room_admins INT[] DEFAULT '{}', -- List of user IDs as admins
+	        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );`,
+
+		`CREATE TABLE IF NOT EXISTS room_users (
+			room_id INT REFERENCES rooms(id) ON DELETE CASCADE,
+			user_id INT REFERENCES users(id) ON DELETE CASCADE,
+			PRIMARY KEY (room_id, user_id)
+		);`,
+
+		`CREATE TABLE IF NOT EXISTS messages (
 			id SERIAL PRIMARY KEY,
+			room_id INT REFERENCES rooms(id) ON DELETE CASCADE,
 			user_id INT REFERENCES users(id) ON DELETE CASCADE,
 			content TEXT NOT NULL,
 			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-		);
-		`,
-		`
-		CREATE TABLE IF NOT EXISTS system_logs (
+		);`,
+
+		`CREATE TABLE IF NOT EXISTS system_logs (
 			id SERIAL PRIMARY KEY,
 			method TEXT NOT NULL,
 			endpoint TEXT NOT NULL,
@@ -38,8 +52,7 @@ func CreateTables(db *sql.DB) {
 			status_code INT NOT NULL,
 			message TEXT NOT NULL,
 			timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-		);
-		`,
+		);`,
 	}
 
 	for _, query := range queries {
@@ -65,7 +78,12 @@ func CreateTables(db *sql.DB) {
 		log.Fatalf("Error: failed to hash super-admin password: %v", err)
 	}
 
-	_, err = db.Exec(`INSERT INTO users (name, email, password, role, created_at, updated_at) VALUES ($1, $2, $3, 'super-admin', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) ON CONFLICT (email) DO NOTHING;`, "YehudaSuper", email, string(hashedPassword))
+	_, err = db.Exec(
+		`INSERT INTO users (name, email, password, role, created_at, updated_at)
+		 VALUES ($1, $2, $3, 'super-admin', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+		 ON CONFLICT (email) DO NOTHING;`,
+		"YehudaSuper", email, string(hashedPassword),
+	)
 	if err != nil {
 		log.Fatalf("Error: failed to insert super-admin user: %v", err)
 	}
